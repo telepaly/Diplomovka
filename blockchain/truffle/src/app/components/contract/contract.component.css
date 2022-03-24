@@ -1,0 +1,17 @@
+.example-full-width {
+  width: 100%;
+}
+
+button {
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+textarea {
+  font-size: 12px;
+}
+
+mat-card {
+  margin: 20px 0px;
+  background-color: #fdfffd;
+}

@@ -1,0 +1,45 @@
+<mat-card xmlns="http://www.w3.org/1999/html">
+  <mat-card-title>Batched Permission Contract</mat-card-title>
+  <section>
+    <div>
+      <mat-slide-toggle [formControl]="toggle1">{{toggle1Title}}</mat-slide-toggle>
+    </div>
+    <div>
+      <mat-slide-toggle [formControl]="logsToggle1">{{logsToggle1Title}}</mat-slide-toggle>
+    </div>
+<!--    <div>-->
+<!--      <mat-form-field appearance="fill">-->
+<!--        <mat-label>Number of calls</mat-label>-->
+<!--        <input matInput type="number" value="">-->
+<!--      </mat-form-field>-->
+<!--    </div>-->
+    <br>
+    <button mat-flat-button color="primary" (click)="runScenario1BatchedPermission()">Run Scenario 1</button>
+    <button mat-stroked-button color="accent" (click)="clearLogs1()">Clear logs</button>
+  </section>
+  <br>
+  <mat-form-field class="example-full-width" appearance="fill">
+    <mat-label>Batched Permission logs</mat-label>
+    <textarea matInput >{{textArea1Logs}}</textarea>
+  </mat-form-field>
+</mat-card>
+
+<mat-card>
+  <mat-card-title>Stake All Contract</mat-card-title>
+  <section>
+    <div>
+      <mat-slide-toggle [formControl]="toggle2">{{toggle2Title}}</mat-slide-toggle>
+    </div>
+    <div>
+      <mat-slide-toggle [formControl]="logsToggle2">{{logsToggle2Title}}</mat-slide-toggle>
+    </div>
+    <br>
+    <button mat-flat-button color="primary" (click)="runScenario1StakeAll()">Run Scenario 1</button>
+    <button mat-stroked-button color="accent" (click)="clearLogs2()">Clear logs</button>
+  </section>
+  <br>
+  <mat-form-field class="example-full-width" appearance="fill">
+    <mat-label>Stake All logs</mat-label>
+    <textarea matInput>{{textArea2Logs}}</textarea>
+  </mat-form-field>
+</mat-card>
