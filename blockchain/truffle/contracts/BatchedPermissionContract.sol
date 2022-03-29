@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.4.22 <0.9.0;
 
+interface IAuthContract {
+    function getNodeAuthStatus(address _owner) external view returns (bool authentificated);
+}
+
 contract BatchedPermissionContract {
     struct ApprovalAwait {
         bool awaiting;
@@ -10,21 +14,23 @@ contract BatchedPermissionContract {
     string private name;
     string private symbol;
     uint8 private decimals;
-    address owner;
 
-    uint256 private constant PRICE_PER_TOKEN = 1 wei; // 1 kB
-    uint256 private constant MAX_ALLOWED_OWNERSHIP = 500000000; // as 500 GB of data
+    address private authService = 0x0000000000000000000000000000000000000000;
+    address private owner = 0x0000000000000000000000000000000000000000;
 
-     /* maping addresses to the balances associated with them */
+    uint256 private constant TOKEN_PRICE = 1 wei; // 1 kB
+
     mapping(address => uint256) userBalance;
 
     mapping(address => bool) awaitingPermission;
 
+    mapping(address => bool) authStatus;
+
     mapping(address => ApprovalAwait) awaitingApproved;
 
-     constructor() public {
-        name = "BatchedPermissionCOntract";
-        symbol = "AuthS";
+    constructor() public {
+        name = "BatchedPermissionContract";
+        symbol = "BPC";
         decimals = 0;
         owner = msg.sender;
     }
@@ -57,18 +63,29 @@ contract BatchedPermissionContract {
         return decimals;
     }
 
-     function getContractbalance() public view returns (uint256 balance){
+    function getAuthStatus(address _nodeAddress) public view returns (bool status){
+        return authStatus[_nodeAddress];
+    }
+
+    function getContractbalance() public view returns (uint256 balance){
         return userBalance[address(this)];
     }
 
-    function getBalance() public view returns (uint256 balance){
-        return userBalance[msg.sender];
+    function setAuthService(address authServiceAddress) public {
+        require(msg.sender == owner);
+        authService = authServiceAddress;
+    }
+
+    function nodeAuthorized(address _nodeAddress) public view returns (bool authorized){
+        return IAuthContract(authService).getNodeAuthStatus(_nodeAddress);
     }
 
     function askPermission() public userWithBalance {
         userBalance[msg.sender] -= 1;
         userBalance[address(this)] += 1;
         awaitingPermission[msg.sender] = true;
+
+        authStatus[msg.sender] = false;
 
         if(awaitingApproved[msg.sender].awaiting){
             userBalance[awaitingApproved[msg.sender].resolverAddress] += 1;
@@ -79,13 +96,17 @@ contract BatchedPermissionContract {
     }
 
     function permissionResolved(address _spender) public {
+        require(nodeAuthorized(msg.sender), "Node is not authorized to perform authentification");
+
         if(awaitingPermission[_spender]){
+            authStatus[msg.sender] = true;
             awaitingPermission[_spender] = false;
             awaitingApproved[_spender] = ApprovalAwait(true, msg.sender);
         }
     }
 
     function denyPermisson(address _spender) public {
+        require(nodeAuthorized(msg.sender), "Node is not authorized to perform authentification");
         if(awaitingPermission[_spender]){
             userBalance[address(this)] -= 1;
             userBalance[_spender] += 1;
@@ -95,30 +116,23 @@ contract BatchedPermissionContract {
         }
     }
 
-    function buyTokens(uint numberOfTokens) external payable{
-        // buyer needs to sent some ether
+    function buyTokens(uint numberOfTokens) external payable {
         require(msg.value > 0 && numberOfTokens > 0);
 
-        uint256 finalAmount = numberOfTokens;
+        uint256  finalPrice = numberOfTokens * TOKEN_PRICE;
 
-        if((userBalance[msg.sender] + numberOfTokens) > MAX_ALLOWED_OWNERSHIP){
-            finalAmount = MAX_ALLOWED_OWNERSHIP - userBalance[msg.sender];
-        }
-        uint256  finalPrice = finalAmount * PRICE_PER_TOKEN;
-
-        // amount of wei needs to be adequate to number of desired tokens
         if(finalPrice <= msg.value){
-            if(msg.value - finalPrice > 0){
-                address(msg.sender).transfer(msg.value - finalPrice);
-            }
-            userBalance[msg.sender] += finalAmount;
+            userBalance[msg.sender] += numberOfTokens;
             emit BuySuccessful(msg.sender);
-            return;
+            uint256 toReturn = msg.value - finalPrice;
+            if(toReturn > 0){
+                address(msg.sender).transfer(toReturn);
+            }
         }
         emit BuyFailed(msg.sender);
     }
 
-    function sellTokens(uint numberOfTokens) external payable{
+    function sellTokens(uint numberOfTokens) external payable {
         require(numberOfTokens > 0);
 
         uint256 finalAmount = numberOfTokens;
@@ -128,14 +142,9 @@ contract BatchedPermissionContract {
         }
 
         if(finalAmount > 0){
-            uint256  finalPrice = finalAmount * PRICE_PER_TOKEN;
-
-            address(msg.sender).transfer(finalPrice);
-
+            address(msg.sender).transfer(finalAmount * TOKEN_PRICE);
             userBalance[msg.sender] -= finalAmount;
-
             emit SellSuccessful(msg.sender);
-            return;
         }
         emit SellFailed(msg.sender);
     }

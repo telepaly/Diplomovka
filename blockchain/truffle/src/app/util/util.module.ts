@@ -5,6 +5,8 @@ import {StakeAllContractService} from "./StakeAllServices/stakeAllContractServic
 import {Scenario1StakeAll} from "./scenarios/StakeAllScenarios/scenario1";
 import {Scenario1BatchedPermission} from "./scenarios/BatchedPermissionScenarios/scenario1";
 import {BatchedPermissionContractService} from "./BatchedPermissionServices/batchedPermissionContractService";
+import {MultiLevelAuthContractService} from "./MultiLevelAuthServices/multiLevelAuthContractService";
+import {SingleLevelAuthContractService} from "./SingleLevelAuthServices/singleLevelAuthContractService";
 
 @NgModule({
   imports: [
@@ -15,7 +17,9 @@ import {BatchedPermissionContractService} from "./BatchedPermissionServices/batc
     StakeAllContractService,
     BatchedPermissionContractService,
     Scenario1StakeAll,
-    Scenario1BatchedPermission
+    Scenario1BatchedPermission,
+    MultiLevelAuthContractService,
+    SingleLevelAuthContractService
   ],
   declarations: [],
 })

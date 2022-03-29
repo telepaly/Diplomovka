@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.4.22 <0.9.0;
 
+interface IAuthContract {
+    function getNodeAuthStatus(address _owner) external view returns (bool authentificated);
+}
+
 contract StakeAllContract {
     /*Struct Stake defines data type of storing stake amount and node address,
       to which will be stake applied after successfull autentification*/
@@ -16,8 +20,7 @@ contract StakeAllContract {
     string private symbol;
     uint8 private decimals;
 
-    uint256 private constant PRICE_PER_TOKEN = 1 wei; // 1 kB
-    uint256 private constant MAX_ALLOWED_OWNERSHIP = 500000000; // as 500 GB of data
+    uint256 private constant TOKEN_PRICE = 1 wei;
 
     /* storing user balances of tokens */
     mapping(address => uint256) userBalance;
@@ -28,10 +31,14 @@ contract StakeAllContract {
     /* storing information about staking */
     mapping(address => Stake) stakeMap;
 
+    address private authService = 0x0000000000000000000000000000000000000000;
+    address private owner = 0x0000000000000000000000000000000000000000;
+
     constructor() public {
         name = "StakeAllContract";
         symbol = "SAC";
         decimals = 0;
+        owner = msg.sender;
     }
 
     modifier userWithBalance() {
@@ -73,7 +80,17 @@ contract StakeAllContract {
         return userStatus[_userAddress];
     }
 
+    function setAuthService(address authServiceAddress) public {
+        require(msg.sender == owner);
+        authService = authServiceAddress;
+    }
+
+    function nodeAuthorized(address _nodeAddress) public view returns (bool authorized){
+        return IAuthContract(authService).getNodeAuthStatus(_nodeAddress);
+    }
+
     function askPermission(address _baseStationAddress) public userWithBalance userNotAwaiting userNotStaking{
+        require(nodeAuthorized(_baseStationAddress), "Node is not authorized to perform authentification");
         userBalance[address(this)] += userBalance[msg.sender];
         stakeMap[msg.sender] = Stake(userBalance[msg.sender], _baseStationAddress);
         userBalance[msg.sender] = 0;
@@ -90,11 +107,12 @@ contract StakeAllContract {
             delete stakeMap[msg.sender];
             userStatus[msg.sender] = Status.UNAUTHORIZED;
         } else {
-            emit OrderAskedToDecline(msg.sender);
+            emit OrderAskedToBeRemoved(msg.sender, stakeMap[msg.sender].nodeAddress);
         }
     }
 
     function approve(address _userAddress) public {
+        require(nodeAuthorized(msg.sender), "Node is not authorized to perform authentification");
         require(stakeMap[_userAddress].nodeAddress == msg.sender, "Staking is not set to this address. You are not allowed for this operation!");
         require(stakeMap[_userAddress].amount > 0, "No staking amount set. Cannot be approved!");
 
@@ -134,19 +152,15 @@ contract StakeAllContract {
     function buyTokens(uint numberOfTokens) external payable {
         require(msg.value > 0 && numberOfTokens > 0);
 
-        uint256 finalAmount = numberOfTokens;
-
-        if((userBalance[msg.sender] + numberOfTokens) > MAX_ALLOWED_OWNERSHIP){
-            finalAmount = MAX_ALLOWED_OWNERSHIP - userBalance[msg.sender];
-        }
-        uint256  finalPrice = finalAmount * PRICE_PER_TOKEN;
+        uint256  finalPrice = numberOfTokens * TOKEN_PRICE;
 
         if(finalPrice <= msg.value){
-            if(msg.value - finalPrice > 0){
-                address(msg.sender).transfer(msg.value - finalPrice);
-            }
-            userBalance[msg.sender] += finalAmount;
+            userBalance[msg.sender] += numberOfTokens;
             emit BuySuccessful(msg.sender);
+            uint256 toReturn = msg.value - finalPrice;
+            if(toReturn > 0){
+                address(msg.sender).transfer(toReturn);
+            }
         }
         emit BuyFailed(msg.sender);
     }
@@ -161,14 +175,9 @@ contract StakeAllContract {
         }
 
         if(finalAmount > 0){
-            uint256  finalPrice = finalAmount * PRICE_PER_TOKEN;
-
-            address(msg.sender).transfer(finalPrice);
-
+            address(msg.sender).transfer(finalAmount * TOKEN_PRICE);
             userBalance[msg.sender] -= finalAmount;
-
             emit SellSuccessful(msg.sender);
-            return;
         }
         emit SellFailed(msg.sender);
     }
@@ -176,7 +185,7 @@ contract StakeAllContract {
     event OrderCreated(address indexed _spender);
     event PermissionApproved(address indexed _spender);
     event OrderDeclined(address indexed _spender);
-    event OrderAskedToDecline(address indexed _spender);
+    event OrderAskedToBeRemoved(address indexed _spender, address indexed _nodeAddress);
     event PermissionRemoved(address indexed _spender);
     event BuySuccessful(address indexed _buyer);
     event BuyFailed(address indexed _buyer);

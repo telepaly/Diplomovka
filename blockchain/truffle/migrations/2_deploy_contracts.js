@@ -1,9 +1,11 @@
 var StakeAllContract = artifacts.require("./StakeAllContract.sol");
-var BatchedPermission = artifacts.require("./BatchedPermissionContract.sol");
-var SimpleAuth = artifacts.require("./SimpleAuthContract.sol");
+var BatchedPermissionContract = artifacts.require("./BatchedPermissionContract.sol");
+var SingleLevelAuth = artifacts.require("./SingleLevelAuthContract.sol");
+var MultiLevelAuth = artifacts.require("./MultiLevelAuthContract.sol");
 
 module.exports = function(deployer) {
   deployer.deploy(StakeAllContract);
-  deployer.deploy(BatchedPermission);
-  deployer.deploy(SimpleAuth);
+  deployer.deploy(BatchedPermissionContract);
+  deployer.deploy(SingleLevelAuth);
+  deployer.deploy(MultiLevelAuth);
 };

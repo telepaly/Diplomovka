@@ -15,6 +15,7 @@
 import {StakeAllContractService} from "../../StakeAllServices/stakeAllContractService";
 import {Injectable} from "@angular/core";
 import {filter} from "rxjs/operators";
+import {MultiLevelAuthContractService} from "../../MultiLevelAuthServices/multiLevelAuthContractService";
 
 @Injectable()
 export class Scenario1StakeAll {
@@ -22,26 +23,34 @@ export class Scenario1StakeAll {
   userAddress: string;
   nodeAddress: string;
 
-  constructor(private stakeAllService: StakeAllContractService) {
+  constructor(private stakeAllService: StakeAllContractService, private multiLevelAuthService: MultiLevelAuthContractService) {
   }
 
   runScenario(times: number = 1) {
     if (times < 1) return;
-    this.stakeAllService.contractInitialized.pipe(filter(val => val !== false)).subscribe(() => {
-      this.accounts = this.stakeAllService.accounts;
 
+    this.multiLevelAuthService.contractInitialized.pipe(filter(val => val !== false)).subscribe(() => {
+      this.accounts = this.stakeAllService.accounts;
+      const authContractAddress = "0x0A680622e38586aeD3e882111676D0477860b12D"
+      const ownerAddress = "0x8dF45F09BF876825873B66303B52Bd3BFf4c6859"
 
       /* by default, user address is set to account with index 0 */
       this.userAddress = this.accounts[0];
-      // this.userAddress = "0xfd4e8f1efdfbf5fbc4a2461aa8f0b2307b2a592e";
 
       /* by default, node address is set to account with index 1 */
       this.nodeAddress = this.accounts[1];
-      // this.nodeAddress = "0x8d31a7fb12aea40bf0e84b362f39dfd70ed98dd0";
-      // let i = 0;
-      for (let i = 0; i <= times; i++) {
-        this.stakeAllService.buyTokens(this.userAddress, 1)
-      }
+
+      this.multiLevelAuthService.activateNode(ownerAddress, this.nodeAddress, true,
+        () => {
+          this.stakeAllService.contractInitialized.pipe(filter(val => val !== false)).subscribe(() => {
+            this.stakeAllService.setAuthService(ownerAddress, authContractAddress,
+              () => {
+                for (let i = 0; i <= times; i++) {
+                  this.stakeAllService.buyTokens(this.userAddress, 1)
+                }
+              })
+          })
+        })
     })
   }
 
@@ -59,5 +68,4 @@ export class Scenario1StakeAll {
       })
     }
   }
-
 }

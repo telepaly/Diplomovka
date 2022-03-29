@@ -3,8 +3,6 @@ import {Subject} from 'rxjs';
 declare let require: any;
 const Web3 = require('web3');
 const contract = require('@truffle/contract');
-// const stakeAll_artifacts = require('../../../../build/contracts/StakeAllContract.json');
-
 declare let window: any;
 
 @Injectable()
@@ -22,21 +20,14 @@ export class Web3Service {
   }
 
   public bootstrapWeb3() {
-    // Checking if Web3 has been injected by the browser (Mist/MetaMask)
     if (typeof window.ethereum !== 'undefined') {
-      // Use Mist/MetaMask's provider
       window.ethereum.enable().then(() => {
         this.web3 = new Web3(window.ethereum);
       });
     } else {
-      console.log('No web3? You should consider trying MetaMask!');
-
-      // Hack to provide backwards compatibility for Truffle, which uses web3js 0.20.x
       Web3.providers.HttpProvider.prototype.sendAsync = Web3.providers.HttpProvider.prototype.send;
-      // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
       this.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8543'));
     }
-    // this.refreshAccounts();
     setInterval(() => this.refreshAccounts(), 1000);
   }
 
@@ -65,7 +56,6 @@ export class Web3Service {
     const accs = await this.web3.eth.getAccounts();
     console.log('Refreshing accounts');
 
-    // Get the initial account balance so it can be displayed.
     if (accs.length === 0) {
       console.warn('Couldn\'t get any accounts! Make sure your Ethereum client is configured correctly.');
       return;

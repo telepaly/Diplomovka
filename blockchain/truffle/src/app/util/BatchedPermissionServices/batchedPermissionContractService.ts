@@ -139,6 +139,22 @@ export class BatchedPermissionContractService {
     }
   }
 
+  public setAuthService(fromAddress: string, serviceAddress: string, callback?: () => void): any {
+    if (this.contractInstance && this.notInWaitingState()) {
+      this.isWaiting.next(true);
+      this.loggingService.logInfo("Setting auth address");
+      this.contractInstance.methods.setAuthService(serviceAddress).send({
+        from: fromAddress,
+        gas: 470000,
+        gasPrice: 1
+      }).then(() => {
+        this.isWaiting.next(false);
+        this.loggingService.logInfo("Auth address set");
+        if (callback) callback();
+      });
+    }
+  }
+
   public getUserStatus(userAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
       this.isWaiting.next(true);

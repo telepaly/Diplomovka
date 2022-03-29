@@ -22,6 +22,8 @@ import {BatchedPermissionContractService} from "./util/BatchedPermissionServices
 import {Web3Service} from "./util/web3.service";
 import {MatDividerModule} from "@angular/material/divider";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {SingleLevelAuthContractService} from "./util/SingleLevelAuthServices/singleLevelAuthContractService";
+import {MultiLevelAuthContractService} from "./util/MultiLevelAuthServices/multiLevelAuthContractService";
 
 @NgModule({
   declarations: [
@@ -44,7 +46,7 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
     MatSlideToggleModule,
     ReactiveFormsModule,
   ],
-  providers: [Scenario1BatchedPermission, Scenario1StakeAll, StakeAllContractService, BatchedPermissionContractService, Web3Service],
+  providers: [Scenario1BatchedPermission, Scenario1StakeAll, StakeAllContractService, BatchedPermissionContractService, Web3Service, SingleLevelAuthContractService, MultiLevelAuthContractService],
   bootstrap: [AppComponent]
 })
 export class AppModule {
