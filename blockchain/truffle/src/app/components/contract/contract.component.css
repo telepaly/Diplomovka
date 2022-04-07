@@ -13,5 +13,32 @@ textarea {
 
 mat-card {
   margin: 20px 0px;
-  background-color: #fdfffd;
+  background-color: white;
+}
+
+table {
+  width: 30%;
+}
+.table-container {
+  margin-top: 10px;
+  max-height: 493px;
+  overflow: auto;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.primary {
+  background-color: #D1495B;
+  color: white;
+}
+
+.accent {
+  color: #00798C;
+}
+
+textarea {
+  color: #D1495B;
 }

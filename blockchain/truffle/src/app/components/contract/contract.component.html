@@ -1,45 +1,108 @@
-<mat-card xmlns="http://www.w3.org/1999/html">
-  <mat-card-title>Batched Permission Contract</mat-card-title>
-  <section>
-    <div>
-      <mat-slide-toggle [formControl]="toggle1">{{toggle1Title}}</mat-slide-toggle>
-    </div>
-    <div>
-      <mat-slide-toggle [formControl]="logsToggle1">{{logsToggle1Title}}</mat-slide-toggle>
-    </div>
-<!--    <div>-->
-<!--      <mat-form-field appearance="fill">-->
-<!--        <mat-label>Number of calls</mat-label>-->
-<!--        <input matInput type="number" value="">-->
-<!--      </mat-form-field>-->
-<!--    </div>-->
-    <br>
-    <button mat-flat-button color="primary" (click)="runScenario1BatchedPermission()">Run</button>
-    <button mat-stroked-button color="accent" (click)="clearLogs1()">Clear logs</button>
-  </section>
-  <br>
-  <mat-form-field class="example-full-width" appearance="fill">
-    <mat-label>Batched Permission logs</mat-label>
-    <textarea matInput >{{textArea1Logs}}</textarea>
-  </mat-form-field>
-</mat-card>
+<div style="float:left;margin-right:10px;">
+  <mat-card class="table-container">
+    <mat-card-title>Accounts - number of accounts: {{accounts.length}}</mat-card-title>
 
-<mat-card>
-  <mat-card-title>Stake All Contract</mat-card-title>
-  <section>
-    <div>
-      <mat-slide-toggle [formControl]="toggle2">{{toggle2Title}}</mat-slide-toggle>
-    </div>
-    <div>
-      <mat-slide-toggle [formControl]="logsToggle2">{{logsToggle2Title}}</mat-slide-toggle>
-    </div>
-    <br>
-    <button mat-flat-button color="primary" (click)="runScenario1StakeAll()">Run</button>
-    <button mat-stroked-button color="accent" (click)="clearLogs2()">Clear logs</button>
-  </section>
-  <br>
-  <mat-form-field class="example-full-width" appearance="fill">
-    <mat-label>Stake All logs</mat-label>
-    <textarea matInput>{{textArea2Logs}}</textarea>
-  </mat-form-field>
-</mat-card>
+    <table mat-table [dataSource]="dataSource"
+           class="mat-elevation-z8">
+      <ng-container matColumnDef="position">
+        <th mat-header-cell *matHeaderCellDef> No.</th>
+        <td mat-cell *matCellDef="let element"> {{element.position}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef> Account name</th>
+        <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-title>Choose authentication service</mat-card-title>
+    <mat-radio-group aria-label="Select an option" [(ngModel)]="authServiceRadioButton">
+      <div *ngFor="let service of authServices;let indexOfelement=index;" style="margin: 10px 0 0 10px">
+        <mat-radio-button
+          [value]="indexOfelement">{{service}}</mat-radio-button>
+      </div>
+    </mat-radio-group>
+  </mat-card>
+</div>
+<mat-tab-group style="float: none">
+  <mat-tab label="Batched Permission">
+    <mat-card xmlns="http://www.w3.org/1999/html">
+      <mat-card-title>Batched Permission Contract</mat-card-title>
+      <mat-form-field appearance="fill">
+        <mat-label>Select scenario</mat-label>
+        <mat-select [(value)]="selectedBatchedPermissionScenario">
+          <mat-option value="scenario1">Buy - ask - approve</mat-option>
+          <mat-option value="scenario2">Just buy</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <section>
+        <div>
+          <mat-slide-toggle [formControl]="toggle1">{{toggle1Title}}</mat-slide-toggle>
+        </div>
+        <div>
+          <mat-slide-toggle [formControl]="logsToggle1">{{logsToggle1Title}}</mat-slide-toggle>
+        </div>
+        <br>
+        <div>
+          <mat-form-field>
+            <mat-label>Number of calls</mat-label>
+            <input matInput type="number" placeholder="Ex. 1" [formControl]="numberOfCalls1" min="1">
+            <span matSuffix>x</span>
+            <mat-error *ngIf="numberOfCalls1.invalid">Minimum is 1</mat-error>
+          </mat-form-field>
+        </div>
+        <br>
+        <button mat-flat-button color="primary" (click)="runScenario1BatchedPermission()" [disabled]="batchedPermissionService.waitingState|async">Run</button>
+        <button mat-stroked-button color="accent" (click)="clearLogs1()">Clear logs</button>
+      </section>
+      <br>
+      <mat-form-field class="example-full-width" appearance="fill">
+        <mat-label>Batched Permission logs</mat-label>
+        <textarea matInput rows="20" [disabled]="textArea2Logs === ''" [value]="textArea1Logs"></textarea>
+      </mat-form-field>
+    </mat-card>
+  </mat-tab>
+  <mat-tab label="Stake All">
+    <mat-card>
+      <mat-card-title>Stake All Contract</mat-card-title>
+      <mat-form-field appearance="fill">
+        <mat-label>Select scenario</mat-label>
+        <mat-select [(value)]="selectedStakeAllScenario">
+          <mat-option value="scenario1">Buy - ask - approve</mat-option>
+          <mat-option value="scenario2">Just buy</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <section>
+        <div>
+          <mat-slide-toggle [formControl]="toggle2">{{toggle2Title}}</mat-slide-toggle>
+        </div>
+        <div>
+          <mat-slide-toggle [formControl]="logsToggle2">{{logsToggle2Title}}</mat-slide-toggle>
+        </div>
+        <br>
+        <div>
+          <mat-form-field>
+            <mat-label>Number of calls</mat-label>
+            <input matInput type="number" placeholder="Ex. 1" [formControl]="numberOfCalls2" min="1">
+            <span matSuffix>x</span>
+            <mat-error *ngIf="numberOfCalls2.invalid">Minimum is 1</mat-error>
+          </mat-form-field>
+        </div>
+        <br>
+        <button mat-flat-button color="primary" [disabled]="stakeAllService.waitingState|async" (click)="runScenario1StakeAll()">Run</button>
+        <button [disabled]="textArea2Logs === ''" mat-stroked-button color="accent" (click)="clearLogs2()">Clear logs</button>
+      </section>
+      <br>
+      <mat-form-field class="example-full-width" appearance="fill">
+        <mat-label>Stake All logs</mat-label>
+        <textarea rows="20" matInput [value]="textArea2Logs"></textarea>
+      </mat-form-field>
+    </mat-card>
+  </mat-tab>
+</mat-tab-group>
+

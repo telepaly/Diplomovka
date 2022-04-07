@@ -1,0 +1,14 @@
+@import '~@angular/material/theming';
+
+$custom-typography: mat-typography-config($font-family: 'font-family: 'Roboto', sans-serif;');
+
+@include mat-core($custom-typography);
+
+@include mat-core();
+
+$primary: mat-palette($mat-red,200);
+$accent: mat-palette($mat-blue-gray,600);
+
+$theme: mat-light-theme($primary, $accent);
+
+@include angular-material-theme($theme);

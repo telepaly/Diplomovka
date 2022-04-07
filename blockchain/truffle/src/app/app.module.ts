@@ -16,7 +16,7 @@ import {
 import {ContractComponent} from './components/contract/contract.component';
 import {MatSelectModule} from "@angular/material/select";
 import {Scenario1BatchedPermission} from "./util/scenarios/BatchedPermissionScenarios/scenario1";
-import {Scenario1StakeAll} from "./util/scenarios/StakeAllScenarios/scenario1";
+import {Scenario1StakeAllContract} from "./util/scenarios/StakeAllScenarios/scenario1";
 import {StakeAllContractService} from "./util/StakeAllServices/stakeAllContractService";
 import {BatchedPermissionContractService} from "./util/BatchedPermissionServices/batchedPermissionContractService";
 import {Web3Service} from "./util/web3.service";
@@ -24,6 +24,11 @@ import {MatDividerModule} from "@angular/material/divider";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {SingleLevelAuthContractService} from "./util/SingleLevelAuthServices/singleLevelAuthContractService";
 import {MultiLevelAuthContractService} from "./util/MultiLevelAuthServices/multiLevelAuthContractService";
+import {AccountsService} from "./util/accountsService";
+import {ScenarioRunner} from "./util/scenarioRunner";
+import {MatTabsModule} from "@angular/material/tabs";
+import {MatRadioModule} from "@angular/material/radio";
+import {MatTableModule} from "@angular/material/table";
 
 @NgModule({
   declarations: [
@@ -45,8 +50,21 @@ import {MultiLevelAuthContractService} from "./util/MultiLevelAuthServices/multi
     MatDividerModule,
     MatSlideToggleModule,
     ReactiveFormsModule,
+    MatTabsModule,
+    MatRadioModule,
+    MatTableModule,
   ],
-  providers: [Scenario1BatchedPermission, Scenario1StakeAll, StakeAllContractService, BatchedPermissionContractService, Web3Service, SingleLevelAuthContractService, MultiLevelAuthContractService],
+  providers: [
+    Scenario1BatchedPermission,
+    Scenario1StakeAllContract,
+    StakeAllContractService,
+    BatchedPermissionContractService,
+    Web3Service,
+    SingleLevelAuthContractService,
+    MultiLevelAuthContractService,
+    AccountsService,
+    ScenarioRunner
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {

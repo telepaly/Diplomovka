@@ -9,26 +9,23 @@ const batchedPermissionContract_artifacts = require('../../../../build/contracts
 export class BatchedPermissionContractService {
   contractInstance: any;
   contractInitialized: BehaviorSubject<boolean>;
-  isWaiting: BehaviorSubject<boolean>;
-  contractName: BehaviorSubject<string>;
-  web3: any;
-  accounts: string[];
-  isAsymetric: boolean;
+  waitingState: BehaviorSubject<boolean>;
+  isAsynchronous: boolean;
   loggingService: LoggingService;
 
   constructor(private web3Service: Web3Service) {
     this.loggingService = new LoggingService();
     this.contractInstance = null
     this.contractInitialized = new BehaviorSubject<boolean>(false);
-    this.isWaiting = new BehaviorSubject<boolean>(false);
+    this.waitingState = new BehaviorSubject<boolean>(false);
     this.initializeContract();
-    this.isAsymetric = false;
+    this.isAsynchronous = false;
   }
 
   //used to enable/disable asymetric calls
 
   setIsAsymetric(asymetric: boolean){
-    this.isAsymetric = asymetric;
+    this.isAsynchronous = asymetric;
   }
 
   setLoggingTurnedOn(turnedOn: boolean){
@@ -36,34 +33,29 @@ export class BatchedPermissionContractService {
   }
 
   private initializeContract() {
-    this.isWaiting.next(true);
-    this.loggingService.logInfo("Contract initialization in progress")
+    this.log("Contract initialization in progress")
+    this.setWaiting(true);
     this.web3Service.initializeContract(batchedPermissionContract_artifacts)
       .then((BatchedPermissionContract) => {
-        this.loggingService.logInfo("Contract initialized")
+        this.setWaiting(false);
+        this.log("Contract initialized")
         this.contractInstance = BatchedPermissionContract;
-        this.web3 = this.web3Service.getWeb3Instance();
-        this.web3.eth.getAccounts().then((accs) => {
-          this.accounts = accs;
-          this.contractInitialized.next(true);
-        })
-        this.isWaiting.next(false);
+        this.contractInitialized.next(true);
       });
   }
 
   public buyTokens(fromAddress: string, numberOfTokens: number, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Buying ${numberOfTokens} tokens in progress`);
+      this.log(`Buying ${numberOfTokens} tokens in progress`);
+      this.setWaiting(true);
       this.contractInstance.methods.buyTokens(numberOfTokens).send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1,
         value: numberOfTokens
       }).then(() => {
-        this.loggingService.logInfo(`${numberOfTokens} tokens bought`);
-        this.isWaiting.next(false);
-        console.log("Successfully bought " + numberOfTokens + " tokens.")
+        this.setWaiting(false);
+        this.log(`${numberOfTokens} tokens bought`);
         if (callback) callback();
       })
 
@@ -72,17 +64,16 @@ export class BatchedPermissionContractService {
 
   public sellTokens(fromAddress: string, numberOfTokens: number, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Selling ${numberOfTokens} tokens in progress`);
+      this.log(`Selling ${numberOfTokens} tokens in progress`);
+      this.setWaiting(true);
       this.contractInstance.methods.sellTokens(numberOfTokens).send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1,
         value: numberOfTokens
       }).then(() => {
-        this.loggingService.logInfo(`${numberOfTokens} tokens sold`);
-        this.isWaiting.next(false);
-        console.log("Successfully sold " + numberOfTokens + " tokens.")
+        this.setWaiting(false);
+        this.log(`${numberOfTokens} tokens sold`);
         if (callback) callback();
       });
     }
@@ -90,16 +81,15 @@ export class BatchedPermissionContractService {
 
   public askPermission(fromAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Asking for permission`);
+      this.log(`Asking for permission`);
+      this.setWaiting(true);
       this.contractInstance.methods.askPermission().send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1
       }).then(() => {
-        this.loggingService.logInfo(`Permission added`);
-        this.isWaiting.next(false);
-        console.log("Permission asked");
+        this.setWaiting(false);
+        this.log(`Permission added`);
         if (callback) callback();
       });
     }
@@ -107,16 +97,15 @@ export class BatchedPermissionContractService {
 
   public permissionResolved(fromAddress: string, userAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Asking for permission resolving`);
+      this.log(`Asking for permission resolving`);
+      this.setWaiting(true);
       this.contractInstance.methods.permissionResolved(userAddress).send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1
       }).then(() => {
-        this.loggingService.logInfo("Permission resolved");
-        this.isWaiting.next(false);
-        console.log("Permission resolved");
+        this.setWaiting(false);
+        this.log("Permission resolved");
         if (callback) callback();
       });
     }
@@ -124,16 +113,15 @@ export class BatchedPermissionContractService {
 
   public denyPermisson(fromAddress: string, userAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Asking for permission deny`);
+      this.log(`Asking for permission deny`);
+      this.setWaiting(true);
       this.contractInstance.methods.denyPermisson(userAddress).send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1
       }).then(() => {
-        this.loggingService.logInfo(`Permission denied`);
-        this.isWaiting.next(false);
-        console.log("Permission denied");
+        this.setWaiting(false);
+        this.log(`Permission denied`);
         if (callback) callback();
       });
     }
@@ -141,15 +129,15 @@ export class BatchedPermissionContractService {
 
   public setAuthService(fromAddress: string, serviceAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo("Setting auth address");
+      this.log("Setting auth address");
+      this.setWaiting(true);
       this.contractInstance.methods.setAuthService(serviceAddress).send({
         from: fromAddress,
         gas: 470000,
         gasPrice: 1
       }).then(() => {
-        this.isWaiting.next(false);
-        this.loggingService.logInfo("Auth address set");
+        this.setWaiting(false);
+        this.log("Auth address set");
         if (callback) callback();
       });
     }
@@ -157,31 +145,37 @@ export class BatchedPermissionContractService {
 
   public getUserStatus(userAddress: string, callback?: () => void): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Asking for user status`);
+      this.log(`Asking for user status`);
+      this.setWaiting(true);
       this.contractInstance.methods.getUserStatus(userAddress).call().then((result) => {
-        this.loggingService.logInfo(`User status received`);
-        this.isWaiting.next(false);
+        this.setWaiting(false);
+        this.log(`User status received`);
         if (callback) callback();
-        console.log(result);
       });
     }
   }
 
   public getBalance(callback?: () => {}): any {
     if (this.contractInstance && this.notInWaitingState()) {
-      this.isWaiting.next(true);
-      this.loggingService.logInfo(`Asking for user balance`);
+      this.log(`Asking for user balance`);
+      this.setWaiting(true);
       this.contractInstance.methods.getBalance().call().then((result) => {
-        this.loggingService.logInfo(`User balance received`);
-        this.isWaiting.next(false);
+        this.setWaiting(false);
+        this.log(`User balance received`);
         if (callback) callback();
-        console.log(result);
       });
     }
   }
 
   notInWaitingState(): boolean {
-    return !this.isWaiting.getValue()||this.isAsymetric;
+    return !this.waitingState.getValue() || this.isAsynchronous;
+  }
+
+  setWaiting(waiting: boolean){
+    this.waitingState.next(waiting)
+  }
+
+  log(message: string){
+    this.loggingService.logInfo(message);
   }
 }

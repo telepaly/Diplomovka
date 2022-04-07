@@ -1,14 +1,18 @@
 import {Component, OnInit} from '@angular/core';
-import {Scenario1BatchedPermission} from "../../util/scenarios/BatchedPermissionScenarios/scenario1";
-import {Scenario1StakeAll} from "../../util/scenarios/StakeAllScenarios/scenario1";
-import {FormControl} from "@angular/forms";
+import {Scenario, Scenario1BatchedPermission} from "../../util/scenarios/BatchedPermissionScenarios/scenario1";
+import {Scenario1StakeAllContract} from "../../util/scenarios/StakeAllScenarios/scenario1";
+import {FormControl, Validators} from "@angular/forms";
 import {BatchedPermissionContractService} from "../../util/BatchedPermissionServices/batchedPermissionContractService";
 import {StakeAllContractService} from "../../util/StakeAllServices/stakeAllContractService";
 import {skip} from "rxjs/operators";
+import {ScenarioRunner} from "../../util/scenarioRunner";
+import {SingleLevelAuthContractService} from "../../util/SingleLevelAuthServices/singleLevelAuthContractService";
+import {MultiLevelAuthContractService} from "../../util/MultiLevelAuthServices/multiLevelAuthContractService";
+import {AccountsService} from "../../util/accountsService";
 
-const ASYNC_OFF = 'async calls OFF';
+const ASYNC_OFF = 'sync calls';
 const LOGS_OFF = 'logs OFF';
-const ASYNC_ON = 'async calls ON';
+const ASYNC_ON = 'async calls';
 const LOGS_ON = 'logs ON';
 
 @Component({
@@ -16,14 +20,14 @@ const LOGS_ON = 'logs ON';
   templateUrl: './contract.component.html',
   styleUrls: ['./contract.component.css']
 })
-
 export class ContractComponent implements OnInit {
   accounts: string[];
   contract: any;
-  stakeAll: any;
   toggle1;
+  numberOfCalls1;
   logsToggle1;
   toggle2;
+  numberOfCalls2;
   logsToggle2;
   toggle1Title;
   logsToggle1Title;
@@ -31,21 +35,39 @@ export class ContractComponent implements OnInit {
   logsToggle2Title;
   textArea1Logs: string = '';
   textArea2Logs: string = '';
+  authServices;
+  authServiceRadioButton = 0;
 
+  selectedBatchedPermissionScenario = 'scenario1';
+  selectedStakeAllScenario = 'scenario1';
+
+  displayedColumns: string[] = ['position', 'name'];
+  dataSource = [];
   constructor(
     private scenario1BatchedPermission: Scenario1BatchedPermission,
-    private scenario1StakeAll: Scenario1StakeAll,
+    private scenario1StakeAll: Scenario1StakeAllContract,
     private batchedPermissionService: BatchedPermissionContractService,
-    private stakeAllService: StakeAllContractService
+    private stakeAllService: StakeAllContractService,
+    private singleLevelAuthService: SingleLevelAuthContractService,
+    private multiLevelAuthService: MultiLevelAuthContractService,
+    private scenarioRunner: ScenarioRunner,
+    public accountsService: AccountsService
   ) {
     this.toggle1 = new FormControl(false, []);
+    this.numberOfCalls1 = new FormControl(1, Validators.min(1));
     this.toggle2 = new FormControl(false, []);
+    this.numberOfCalls2 = new FormControl(1, Validators.min(1));
     this.logsToggle1 = new FormControl(true, []);
     this.logsToggle2 = new FormControl(true, []);
     this.toggle1Title = ASYNC_OFF;
     this.toggle2Title = ASYNC_OFF;
     this.logsToggle1Title = LOGS_OFF;
     this.logsToggle2Title = LOGS_ON;
+
+    this.authServices = [
+      'SingleLevelAuthentication',
+      'MultiLevelAuthentication',
+    ];
   }
 
   ngOnInit(): void {
@@ -55,6 +77,11 @@ export class ContractComponent implements OnInit {
     this.subscribeToLogsToggle2Change();
     this.subscribeToBatchedPermissionContractLogs();
     this.subscribeToStakeAllContractLogs();
+
+    this.accountsService.getAccountsObservable().subscribe(accounts => {
+      this.accounts = accounts;
+      this.dataSource = this.accounts.map((val, index) => ({name: val, position: index+1}));
+    })
   };
 
   subscribeToToggle1Change() {
@@ -94,18 +121,52 @@ export class ContractComponent implements OnInit {
   }
 
   runScenario1BatchedPermission() {
-    this.scenario1BatchedPermission.runScenario(100);
+    if (this.numberOfCalls1.valid && this.selectedBatchedPermissionScenario) this.scenarioRunner.runScenario(
+      this.getAuthService(this.authServiceRadioButton),
+      this.batchedPermissionService,
+      this.numberOfCalls1.value,
+      this.getSelectedBatchedPermissionScenario(this.selectedBatchedPermissionScenario)
+    );
   }
 
   runScenario1StakeAll() {
-    this.scenario1StakeAll.runScenario(1000);
+    if (this.numberOfCalls2.valid) this.scenarioRunner.runScenario(
+      this.multiLevelAuthService,
+      this.stakeAllService,
+      this.numberOfCalls2.value,
+      this.getSelectedStakeAllScenario(this.selectedStakeAllScenario)
+    );
   }
 
-  clearLogs1(){
+  clearLogs1() {
     this.textArea1Logs = '';
   }
 
-  clearLogs2(){
+  clearLogs2() {
     this.textArea2Logs = '';
+  }
+
+  getAuthService(index){
+    return index === 0 ? this.singleLevelAuthService : this.multiLevelAuthService;
+  }
+
+  getSelectedBatchedPermissionScenario(value){
+    switch(value){
+      case 'scenario1': {
+        return this.scenario1BatchedPermission;
+      }
+    }
+  }
+
+  getSelectedStakeAllScenario(value){
+    switch(value){
+      case 'scenario1': {
+        return this.scenario1StakeAll;
+      }
+    }
+  }
+
+  getInfo(scenario: Scenario){
+    return scenario.getInfo();
   }
 }

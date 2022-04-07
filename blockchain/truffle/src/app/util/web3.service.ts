@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Subject} from 'rxjs';
+import {BehaviorSubject, Subject} from 'rxjs';
 declare let require: any;
 const Web3 = require('web3');
 const contract = require('@truffle/contract');
@@ -9,9 +9,8 @@ declare let window: any;
 export class Web3Service {
   public web3: any;
   public accounts: string[];
-  public ready = false;
 
-  public accountsObservable = new Subject<string[]>();
+  public accountsObservable = new BehaviorSubject<string[]>([]);
 
   constructor() {
     window.addEventListener('load', (event) => {
@@ -66,9 +65,8 @@ export class Web3Service {
 
       this.accountsObservable.next(accs);
       this.accounts = accs;
+      this.accounts.forEach(account => this.web3.eth.personal.unlockAccount(account, "password", 10000))
     }
-
-    this.ready = true;
   }
 
   getWeb3Instance(){

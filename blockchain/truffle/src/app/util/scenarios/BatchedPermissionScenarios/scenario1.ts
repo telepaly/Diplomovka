@@ -8,50 +8,31 @@
 
  **/
 
-import {Injectable} from "@angular/core";
-import {filter} from "rxjs/operators";
-import {BatchedPermissionContractService} from "../../BatchedPermissionServices/batchedPermissionContractService";
-import {MultiLevelAuthContractService} from "../../MultiLevelAuthServices/multiLevelAuthContractService";
+export interface Scenario {
+  runner: (service: any, userAddress: string, nodeAddress: string, callback?: () => void) => void;
+  getInfo: () => string
+}
 
-@Injectable()
-export class Scenario1BatchedPermission {
-  accounts: string[];
-  userAddress: string;
-  nodeAddress: string;
-
-  constructor(private batchedPermissionService: BatchedPermissionContractService, private multiLevelAuthService: MultiLevelAuthContractService) {
+export class Scenario1BatchedPermission implements Scenario {
+  constructor() {
   }
 
-  runScenario(times?: number) {
-    this.multiLevelAuthService.contractInitialized.pipe(filter(val => val !== false)).subscribe(() => {
-      this.accounts = this.batchedPermissionService.accounts;
-      const authContractAddress = "0x0A680622e38586aeD3e882111676D0477860b12D"
-      const ownerAddress = "0x8dF45F09BF876825873B66303B52Bd3BFf4c6859"
-
-      /* by default, user address is set to account with index 0 */
-      this.userAddress = this.accounts[0];
-
-      /* by default, node address is set to account with index 1 */
-      this.nodeAddress = this.accounts[1];
-
-
-      this.multiLevelAuthService.activateNode(ownerAddress, this.nodeAddress, true,
-        () => {
-          this.batchedPermissionService.contractInitialized.pipe(filter(val => val !== false)).subscribe(() => {
-              this.batchedPermissionService.setAuthService(ownerAddress, authContractAddress,
-                () => {
-                  for (let i = 0; i < times; i++) {
-                    this.batchedPermissionService.buyTokens(this.userAddress, 1000, () => {
-                      this.batchedPermissionService.askPermission(this.userAddress, () => {
-                        this.batchedPermissionService.permissionResolved(this.nodeAddress, this.userAddress, () => {
-                        })
-                      })
-                    })
-                  }
-                })
-            }
-          )
-        })
+  runner(service, userAddress: string, nodeAddress: string, callback: () => void = () => {
+  }) {
+    service.buyTokens(userAddress, 1, () => {
+      service.askPermission(userAddress, () => {
+        service.permissionResolved(nodeAddress, userAddress, callback)
+      })
     })
+  }
+
+  getInfo() {
+    return "in this scenario user:\n" +
+      "\n" +
+      " 1. buys tokens\n" +
+      "\n" +
+      " 2. ask for permission\n" +
+      "\n" +
+      " 3. is given permission"
   }
 }
